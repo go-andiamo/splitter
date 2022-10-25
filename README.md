@@ -1,4 +1,7 @@
 # Splitter
+[![GoDoc](https://godoc.org/github.com/go-andiamo/splitter?status.svg)](https://pkg.go.dev/github.com/go-andiamo/splitter)
+[![Latest Version](https://img.shields.io/github/v/tag/go-andiamo/splitter.svg?sort=semver&style=flat&label=version&color=blue)](https://github.com/go-andiamo/splitter/releases)
+[![codecov](https://codecov.io/gh/go-andiamo/splitter/branch/master/graph/badge.svg)](https://codecov.io/gh/go-andiamo/splitter)
 
 Go package for splitting strings (aware of enclosing braces and quotes)
 
