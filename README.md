@@ -2,6 +2,7 @@
 [![GoDoc](https://godoc.org/github.com/go-andiamo/splitter?status.svg)](https://pkg.go.dev/github.com/go-andiamo/splitter)
 [![Latest Version](https://img.shields.io/github/v/tag/go-andiamo/splitter.svg?sort=semver&style=flat&label=version&color=blue)](https://github.com/go-andiamo/splitter/releases)
 [![codecov](https://codecov.io/gh/go-andiamo/splitter/branch/main/graph/badge.svg?token=igjnZdgh0e)](https://codecov.io/gh/go-andiamo/splitter)
+[![Go Report Card](https://goreportcard.com/badge/github.com/go-andiamo/splitter)](https://goreportcard.com/report/github.com/go-andiamo/splitter)
 
 Go package for splitting strings (aware of enclosing braces and quotes)
 
