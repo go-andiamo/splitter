@@ -177,7 +177,7 @@ func TestSplitter_PostElementCheck_Errors(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 3, len(parts))
 
-	parts, err = s.Split(`,bbb,ccc`)
+	_, err = s.Split(`,bbb,ccc`)
 	require.Error(t, err)
 	require.Equal(t, `first cannot be empty`, err.Error())
 
