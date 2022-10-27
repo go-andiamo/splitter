@@ -30,6 +30,14 @@ func (e *Enclosure) clone() Enclosure {
 	}
 }
 
+func (e *Enclosure) isDoubleEscaping() bool {
+	return e.IsQuote && e.Escapable && e.End == e.Escape
+}
+
+func (e *Enclosure) isEscapable() bool {
+	return e.IsQuote && e.Escapable
+}
+
 var (
 	DoubleQuotes                              = _DoubleQuotes
 	DoubleQuotesBackSlashEscaped              = _DoubleQuotesBackSlashEscaped
@@ -48,7 +56,7 @@ var (
 	LeftRightDoublePrimeQuotes                = _LeftRightDoublePrimeQuotes
 	SingleLowHigh9Quotes                      = _SingleLowHigh9Quotes
 	DoubleLowHigh9Quotes                      = _DoubleLowHigh9Quotes
-	Brackets                                  = _Parenthesis
+	Parenthesis                               = _Parenthesis
 	CurlyBrackets                             = _CurlyBrackets
 	SquareBrackets                            = _SquareBrackets
 	LtGtAngleBrackets                         = _LtGtAngleBrackets
