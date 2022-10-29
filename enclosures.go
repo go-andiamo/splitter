@@ -197,7 +197,7 @@ var (
 	}
 	_LeftRightDoublePrimeQuotes = &Enclosure{
 		Start:   '\u301D',
-		Escape:  '\u301E',
+		End:     '\u301E',
 		IsQuote: true,
 	}
 	_SingleLowHigh9Quotes = &Enclosure{
@@ -239,8 +239,8 @@ var (
 		End:   '\u207e',
 	}
 	_SmallParenthesis = &Enclosure{
-		Start:  '\uFE59',
-		Escape: '\uFE5A',
+		Start: '\uFE59',
+		End:   '\uFE5A',
 	}
 	_SmallCurlyBrackets = &Enclosure{
 		Start: '\uFE5B',
