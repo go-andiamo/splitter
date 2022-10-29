@@ -320,6 +320,7 @@ func TestOption_UnescapeQuotes(t *testing.T) {
 	require.Equal(t, `"b""b""b"`, pts[1])
 
 	pts, err = s.Split(`"a"""/"b""b""b" "b"`, UnescapeQuotes)
+	require.NoError(t, err)
 	require.Equal(t, 2, len(pts))
 	require.Equal(t, `a"`, pts[0])
 	require.Equal(t, `b"b"b b`, pts[1])
