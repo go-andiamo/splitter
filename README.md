@@ -25,7 +25,7 @@ func main() {
     println(len(parts))
 }
 ```
-would yield 5 - instead of the desired 3
+would yield 5 ([try on go-playground](https://go.dev/play/p/bEnwjc-gfQS)) - instead of the desired 3
 
 However, with splitter, the result would be different...
 ```go
@@ -41,7 +41,7 @@ func main() {
     println(len(parts))
 }
 ```
-which yields the desired 3!
+which yields the desired 3! [try on go-playground](https://go.dev/play/p/lIae-RjzSe6)
 
 Note: The varargs, after the first separator arg, are the desired 'enclosures' (e.g. quotes, brackets, etc.) to be taken
 into consideration
@@ -62,8 +62,9 @@ func main() {
     parts, _ := commaSplitter.Split(str)
     println(len(parts))
 }
-
 ```
+[try on go-playground](https://go.dev/play/p/wgJ68hXBp1n)
+
 Or with double escaping...
 ```go
 package main
@@ -78,6 +79,7 @@ func main() {
     println(len(parts))
 }
 ```
+[try on go-playground](https://go.dev/play/p/3BpayDZyaA7)
 
 #### Not separating when separator encountered in quotes or brackets...
 ```go
@@ -90,7 +92,7 @@ import (
 
 func main() {
     encs := []*splitter.Enclosure{
-        splitter.Brackets, splitter.SquareBrackets, splitter.CurlyBrackets,
+        splitter.Parenthesis, splitter.SquareBrackets, splitter.CurlyBrackets,
         splitter.DoubleQuotesDoubleEscaped, splitter.SingleQuotesDoubleEscaped,
     }
     commaSplitter, _ := splitter.NewSplitter(',', encs...)
@@ -103,3 +105,4 @@ func main() {
     }
 }
 ```
+[try on go-playground](https://go.dev/play/p/bvzC1NXfG3z)

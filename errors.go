@@ -1,27 +1,44 @@
 package splitter
 
-import "fmt"
+import (
+	"fmt"
+)
 
+// SplittingErrorType is the splitting error type - as used by splittingError
 type SplittingErrorType int
 
 const (
 	Unopened SplittingErrorType = iota
 	Unclosed
+	OptionFail
+	Wrapped
 )
 
-type SplittingError struct {
-	Type      SplittingErrorType
-	Position  int
-	Rune      rune
-	Enclosure *Enclosure
+// SplittingError is the error type always returned from Splitter.Split
+type SplittingError interface {
+	error
+	Type() SplittingErrorType
+	Position() int
+	Rune() rune
+	Enclosure() *Enclosure
+	Wrapped() error
 }
 
-func newSplittingError(t SplittingErrorType, pos int, r rune, enc *Enclosure) error {
-	return &SplittingError{
-		Type:      t,
-		Position:  pos,
-		Rune:      r,
-		Enclosure: enc,
+type splittingError struct {
+	errorType SplittingErrorType
+	position  int
+	rune      rune
+	enc       *Enclosure
+	wrapped   error
+	message   string
+}
+
+func newSplittingError(t SplittingErrorType, pos int, r rune, enc *Enclosure) SplittingError {
+	return &splittingError{
+		errorType: t,
+		position:  pos,
+		rune:      r,
+		enc:       enc,
 	}
 }
 
@@ -30,9 +47,61 @@ const (
 	unclosedFmt = "unclosed '%s' at position %d"
 )
 
-func (e *SplittingError) Error() string {
-	if e.Type == Unopened {
-		return fmt.Sprintf(unopenedFmt, string(e.Rune), e.Position)
+func (e *splittingError) Error() string {
+	if e.errorType == Unopened {
+		return fmt.Sprintf(unopenedFmt, string(e.rune), e.position)
+	} else if e.errorType == Unclosed {
+		return fmt.Sprintf(unclosedFmt, string(e.rune), e.position)
+	} else if e.wrapped != nil {
+		return e.wrapped.Error()
 	}
-	return fmt.Sprintf(unclosedFmt, string(e.Rune), e.Position)
+	return e.message
+}
+
+func (e *splittingError) Type() SplittingErrorType {
+	return e.errorType
+}
+func (e *splittingError) Position() int {
+	return e.position
+}
+func (e *splittingError) Rune() rune {
+	return e.rune
+}
+func (e *splittingError) Enclosure() *Enclosure {
+	return e.enc
+}
+func (e *splittingError) Wrapped() error {
+	return e.wrapped
+}
+
+func asSplittingError(err error, pos int) SplittingError {
+	if err != nil {
+		if se, ok := err.(SplittingError); ok {
+			return se
+		} else {
+			return &splittingError{
+				errorType: Wrapped,
+				position:  pos,
+				wrapped:   err,
+			}
+		}
+	}
+	return nil
+}
+
+func NewOptionFailError(msg string, pos int, subPart SubPart) SplittingError {
+	if subPart != nil {
+		return &splittingError{
+			errorType: OptionFail,
+			position:  subPart.StartPos(),
+			rune:      subPart.StartRune(),
+			enc:       subPart.Enclosure(),
+			message:   msg,
+		}
+	}
+	return &splittingError{
+		errorType: OptionFail,
+		position:  pos,
+		message:   msg,
+	}
 }
