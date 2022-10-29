@@ -11,7 +11,7 @@ const (
 	Brackets
 )
 
-// SubPart is the interfaces passed PostElementCheck - to enable contiguous enclosures to be spotted
+// SubPart is the interfaces passed to Options.Apply - to enable examination of sub-parts found in a split part
 type SubPart interface {
 	// StartPos returns the start position (relative to the original string) of the part
 	StartPos() int
