@@ -1,10 +1,8 @@
 package splitter
 
 import (
-	"errors"
 	"fmt"
 	"github.com/stretchr/testify/require"
-	"strings"
 	"testing"
 )
 
@@ -107,6 +105,22 @@ func TestSplitter_Split(t *testing.T) {
 			`foo/"\"/"/bar`,
 			[]string{`foo`, `"\"/"`, `bar`},
 		},
+		{
+			``,
+			[]string{``},
+		},
+		{
+			` `,
+			[]string{` `},
+		},
+		{
+			`/`,
+			[]string{``, ``},
+		},
+		{
+			`//`,
+			[]string{``, ``, ``},
+		},
 	}
 	for i, tc := range testCases {
 		t.Run(fmt.Sprintf("[%d]%s", i+1, tc.str), func(t *testing.T) {
@@ -124,66 +138,6 @@ func TestSplitter_Split_DoubleEscapes(t *testing.T) {
 	parts, err := s.Split(`"aa"","",,,,,,""""""""""bbb"`)
 	require.NoError(t, err)
 	require.Equal(t, 1, len(parts))
-}
-
-func TestSplitter_PostElementFix(t *testing.T) {
-	s, err := NewSplitter(',')
-	require.NoError(t, err)
-	s.SetPostElementFixer(func(s string, pos int, captured int, subParts ...SubPart) (string, bool, error) {
-		return strings.Trim(s, " "), true, nil
-	})
-	parts, err := s.Split(`a, b,  c     `)
-	require.NoError(t, err)
-	require.Equal(t, 3, len(parts))
-	require.Equal(t, `a`, parts[0])
-	require.Equal(t, `b`, parts[1])
-	require.Equal(t, `c`, parts[2])
-}
-
-func TestSplitter_PostElementFix_Errors(t *testing.T) {
-	s, err := NewSplitter(',')
-	require.NoError(t, err)
-	s.SetPostElementFixer(func(s string, pos int, captured int, subParts ...SubPart) (string, bool, error) {
-		if s == "" {
-			return "", false, errors.New("whoops")
-		}
-		return s, true, nil
-	})
-	_, err = s.Split(`a,b,c`)
-	require.NoError(t, err)
-
-	_, err = s.Split(`,b,c`)
-	require.Error(t, err)
-	require.Equal(t, `whoops`, err.Error())
-
-	_, err = s.Split(`a,b,`)
-	require.Error(t, err)
-	require.Equal(t, `whoops`, err.Error())
-}
-
-func TestSplitter_PostElementCheck_Errors(t *testing.T) {
-	s, err := NewSplitter(',')
-	require.NoError(t, err)
-	s.SetPostElementFixer(func(s string, pos int, captured int, subParts ...SubPart) (string, bool, error) {
-		if s == "" && captured == 0 {
-			return "", false, errors.New("first cannot be empty")
-		} else if s == "" {
-			return "", false, nil
-		}
-		return s, true, nil
-	})
-
-	parts, err := s.Split(`aaa,bbb,ccc`)
-	require.NoError(t, err)
-	require.Equal(t, 3, len(parts))
-
-	_, err = s.Split(`,bbb,ccc`)
-	require.Error(t, err)
-	require.Equal(t, `first cannot be empty`, err.Error())
-
-	parts, err = s.Split(`aaa,,ccc`)
-	require.NoError(t, err)
-	require.Equal(t, 2, len(parts))
 }
 
 func TestSplitter_Split_Errors(t *testing.T) {
@@ -286,116 +240,162 @@ func TestSplitter_Split_Errors(t *testing.T) {
 func TestSplitter_Split_Contiguous(t *testing.T) {
 	s, err := NewSplitter(',', DoubleQuotesDoubleEscaped, SingleQuotes, CurlyBrackets)
 	require.NoError(t, err)
-	subs := 0
-	startPositions := make([]int, 0)
-	endPositions := make([]int, 0)
-	isQuotes := make([]bool, 0)
-	isBrackets := make([]bool, 0)
-	isFixeds := make([]bool, 0)
-	escapables := make([]bool, 0)
-	startRunes := make([]rune, 0)
-	endRunes := make([]rune, 0)
-	escRunes := make([]rune, 0)
-	unescaped := make([]string, 0)
-	whitespacing := make([]bool, 0)
-	types := make([]SubPartType, 0)
-	s.SetPostElementFixer(func(s string, pos int, captured int, subParts ...SubPart) (string, bool, error) {
-		subs = len(subParts)
-		for _, sub := range subParts {
-			startPositions = append(startPositions, sub.StartPos())
-			endPositions = append(endPositions, sub.EndPos())
-			isQuotes = append(isQuotes, sub.IsQuote())
-			isBrackets = append(isBrackets, sub.IsBrackets())
-			isFixeds = append(isFixeds, sub.IsFixed())
-			escapables = append(escapables, sub.Escapable())
-			startRunes = append(startRunes, sub.StartRune())
-			endRunes = append(endRunes, sub.EndRune())
-			escRunes = append(escRunes, sub.EscapeRune())
-			unescaped = append(unescaped, sub.UnEscaped())
-			whitespacing = append(whitespacing, sub.IsWhitespaceOnly(" "))
-			types = append(types, sub.Type())
-		}
-		return s, true, nil
-	})
-	parts, err := s.Split(` "bbb""" '222'{'a','b','c'} `)
+
+	c := &infoCapture{}
+	parts, err := s.Split(` "bbb""" '222'{'a','b','c'} `, c)
 	//                        0123456789012345678901234567
 	require.NoError(t, err)
 	require.Equal(t, 1, len(parts))
-	require.Equal(t, 6, subs)
-	require.Equal(t, 6, len(startPositions))
-	require.Equal(t, 6, len(endPositions))
-	require.Equal(t, 6, len(isQuotes))
-	require.Equal(t, 6, len(isBrackets))
-	require.Equal(t, 6, len(isFixeds))
-	require.Equal(t, 6, len(escapables))
-	require.Equal(t, 6, len(startRunes))
-	require.Equal(t, 6, len(endRunes))
-	require.Equal(t, 6, len(escRunes))
-	require.Equal(t, 6, len(unescaped))
-	require.Equal(t, 6, len(whitespacing))
-	require.Equal(t, 6, len(types))
+	require.Equal(t, 1, c.called)
+	require.Equal(t, 6, c.subs)
+	require.Equal(t, 6, len(c.startPositions))
+	require.Equal(t, 6, len(c.endPositions))
+	require.Equal(t, 6, len(c.isQuotes))
+	require.Equal(t, 6, len(c.isBrackets))
+	require.Equal(t, 6, len(c.isFixeds))
+	require.Equal(t, 6, len(c.escapables))
+	require.Equal(t, 6, len(c.startRunes))
+	require.Equal(t, 6, len(c.endRunes))
+	require.Equal(t, 6, len(c.escRunes))
+	require.Equal(t, 6, len(c.unescaped))
+	require.Equal(t, 6, len(c.whitespacing))
+	require.Equal(t, 6, len(c.types))
 
-	require.Equal(t, 0, startPositions[0])
-	require.Equal(t, 0, endPositions[0])
-	require.Equal(t, 1, startPositions[1])
-	require.Equal(t, 7, endPositions[1])
-	require.Equal(t, 8, startPositions[2])
-	require.Equal(t, 8, endPositions[2])
-	require.Equal(t, 9, startPositions[3])
-	require.Equal(t, 13, endPositions[3])
-	require.Equal(t, 14, startPositions[4])
-	require.Equal(t, 26, endPositions[4])
-	require.Equal(t, 27, startPositions[5])
-	require.Equal(t, 27, endPositions[5])
+	require.Equal(t, 0, c.startPositions[0])
+	require.Equal(t, 0, c.endPositions[0])
+	require.Equal(t, 1, c.startPositions[1])
+	require.Equal(t, 7, c.endPositions[1])
+	require.Equal(t, 8, c.startPositions[2])
+	require.Equal(t, 8, c.endPositions[2])
+	require.Equal(t, 9, c.startPositions[3])
+	require.Equal(t, 13, c.endPositions[3])
+	require.Equal(t, 14, c.startPositions[4])
+	require.Equal(t, 26, c.endPositions[4])
+	require.Equal(t, 27, c.startPositions[5])
+	require.Equal(t, 27, c.endPositions[5])
 
-	require.True(t, isFixeds[0])
-	require.True(t, isQuotes[1])
-	require.True(t, isFixeds[2])
-	require.True(t, isQuotes[3])
-	require.True(t, isBrackets[4])
-	require.True(t, isFixeds[5])
+	require.True(t, c.isFixeds[0])
+	require.True(t, c.isQuotes[1])
+	require.True(t, c.isFixeds[2])
+	require.True(t, c.isQuotes[3])
+	require.True(t, c.isBrackets[4])
+	require.True(t, c.isFixeds[5])
 
-	require.Equal(t, Fixed, types[0])
-	require.Equal(t, Quotes, types[1])
-	require.Equal(t, Fixed, types[2])
-	require.Equal(t, Quotes, types[3])
-	require.Equal(t, Brackets, types[4])
-	require.Equal(t, Fixed, types[5])
+	require.Equal(t, Fixed, c.types[0])
+	require.Equal(t, Quotes, c.types[1])
+	require.Equal(t, Fixed, c.types[2])
+	require.Equal(t, Quotes, c.types[3])
+	require.Equal(t, Brackets, c.types[4])
+	require.Equal(t, Fixed, c.types[5])
 
-	require.False(t, escapables[0])
-	require.True(t, escapables[1])
-	require.False(t, escapables[2])
+	require.False(t, c.escapables[0])
+	require.True(t, c.escapables[1])
+	require.False(t, c.escapables[2])
 
-	require.True(t, whitespacing[0])
-	require.False(t, whitespacing[1])
-	require.True(t, whitespacing[2])
-	require.False(t, whitespacing[3])
-	require.False(t, whitespacing[4])
-	require.True(t, whitespacing[5])
+	require.True(t, c.whitespacing[0])
+	require.False(t, c.whitespacing[1])
+	require.True(t, c.whitespacing[2])
+	require.False(t, c.whitespacing[3])
+	require.False(t, c.whitespacing[4])
+	require.True(t, c.whitespacing[5])
 
-	require.Equal(t, int32(0), startRunes[0])
-	require.Equal(t, int32(0), endRunes[0])
-	require.Equal(t, '"', startRunes[1])
-	require.Equal(t, '"', endRunes[1])
-	require.Equal(t, int32(0), startRunes[2])
-	require.Equal(t, int32(0), endRunes[2])
-	require.Equal(t, '\'', startRunes[3])
-	require.Equal(t, '\'', endRunes[3])
-	require.Equal(t, '{', startRunes[4])
-	require.Equal(t, '}', endRunes[4])
-	require.Equal(t, int32(0), startRunes[5])
-	require.Equal(t, int32(0), endRunes[5])
+	require.Equal(t, int32(0), c.startRunes[0])
+	require.Equal(t, int32(0), c.endRunes[0])
+	require.Equal(t, '"', c.startRunes[1])
+	require.Equal(t, '"', c.endRunes[1])
+	require.Equal(t, int32(0), c.startRunes[2])
+	require.Equal(t, int32(0), c.endRunes[2])
+	require.Equal(t, '\'', c.startRunes[3])
+	require.Equal(t, '\'', c.endRunes[3])
+	require.Equal(t, '{', c.startRunes[4])
+	require.Equal(t, '}', c.endRunes[4])
+	require.Equal(t, int32(0), c.startRunes[5])
+	require.Equal(t, int32(0), c.endRunes[5])
 
-	require.Equal(t, int32(0), escRunes[0])
-	require.Equal(t, '"', escRunes[1])
-	require.Equal(t, int32(0), escRunes[2])
-	require.Equal(t, int32(0), escRunes[3])
-	require.Equal(t, int32(0), escRunes[4])
-	require.Equal(t, int32(0), escRunes[5])
-	require.Equal(t, ` `, unescaped[0])
-	require.Equal(t, `bbb"`, unescaped[1])
-	require.Equal(t, ` `, unescaped[2])
-	require.Equal(t, `222`, unescaped[3])
-	require.Equal(t, `{'a','b','c'}`, unescaped[4])
-	require.Equal(t, ` `, unescaped[5])
+	require.Equal(t, int32(0), c.escRunes[0])
+	require.Equal(t, '"', c.escRunes[1])
+	require.Equal(t, int32(0), c.escRunes[2])
+	require.Equal(t, int32(0), c.escRunes[3])
+	require.Equal(t, int32(0), c.escRunes[4])
+	require.Equal(t, int32(0), c.escRunes[5])
+	require.Equal(t, ` `, c.unescaped[0])
+	require.Equal(t, `bbb"`, c.unescaped[1])
+	require.Equal(t, ` `, c.unescaped[2])
+	require.Equal(t, `222`, c.unescaped[3])
+	require.Equal(t, `{'a','b','c'}`, c.unescaped[4])
+	require.Equal(t, ` `, c.unescaped[5])
+}
+
+type infoCapture struct {
+	called         int
+	subs           int
+	startPositions []int
+	endPositions   []int
+	isQuotes       []bool
+	isBrackets     []bool
+	isFixeds       []bool
+	escapables     []bool
+	startRunes     []rune
+	endRunes       []rune
+	escRunes       []rune
+	unescaped      []string
+	whitespacing   []bool
+	types          []SubPartType
+}
+
+func (o *infoCapture) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	o.called++
+	o.subs = len(subParts)
+	for _, sub := range subParts {
+		o.startPositions = append(o.startPositions, sub.StartPos())
+		o.endPositions = append(o.endPositions, sub.EndPos())
+		o.isQuotes = append(o.isQuotes, sub.IsQuote())
+		o.isBrackets = append(o.isBrackets, sub.IsBrackets())
+		o.isFixeds = append(o.isFixeds, sub.IsFixed())
+		o.escapables = append(o.escapables, sub.Escapable())
+		o.startRunes = append(o.startRunes, sub.StartRune())
+		o.endRunes = append(o.endRunes, sub.EndRune())
+		o.escRunes = append(o.escRunes, sub.EscapeRune())
+		o.unescaped = append(o.unescaped, sub.UnEscaped())
+		o.whitespacing = append(o.whitespacing, sub.IsWhitespaceOnly(" "))
+		o.types = append(o.types, sub.Type())
+	}
+	return s, true, nil
+}
+
+func TestSplitter_SetDefaultOptions(t *testing.T) {
+	s, err := NewSplitter(',')
+	require.NoError(t, err)
+	rs, ok := s.(*splitter)
+	require.True(t, ok)
+	require.Equal(t, 0, len(rs.defOptions))
+
+	s.AddDefaultOptions(nil, NotEmptyLast, NotEmptyLast)
+	require.Equal(t, 1, len(rs.defOptions))
+
+	s.AddDefaultOptions(nil, NotEmptyFirst, NotEmptyFirst)
+	require.Equal(t, 2, len(rs.defOptions))
+}
+
+func TestEnsureSplitterContextOptionsSegregated(t *testing.T) {
+	s, err := NewSplitter(',')
+	require.NoError(t, err)
+
+	opt := &addOptionsOption{
+		splitter: s,
+	}
+
+	pts, err := s.Split(`a,b,c,`, opt)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(pts))
+}
+
+type addOptionsOption struct {
+	splitter Splitter
+}
+
+func (o *addOptionsOption) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	// add an option to the original splitter - which should not be seen in the current splitter context...
+	o.splitter.AddDefaultOptions(IgnoreEmptyFirst, IgnoreEmptyLast)
+	return s, true, nil
 }
