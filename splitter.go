@@ -50,7 +50,7 @@ func NewSplitter(separator rune, encs ...*Enclosure) (Splitter, error) {
 // MustCreateSplitter is the same as NewSplitter, except that it panics in case of error
 func MustCreateSplitter(separator rune, encs ...*Enclosure) Splitter {
 	if s, err := NewSplitter(separator, encs...); err != nil {
-		panic(any(err))
+		panic(err)
 	} else {
 		return s
 	}
