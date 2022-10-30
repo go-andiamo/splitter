@@ -62,7 +62,17 @@ To update Splitter to the latest version, run:
 ## Enclosures
 Enclosures instruct the splitter specific start/end sequences within which the separator is not to be considered.  An enclosure can be one of two types: quotes or brackets.
 
-Quote type enclosures only differ from bracket types in that the end quote can optionally be 'escaped' within the quoted sequence. 
+Quote type enclosures only differ from bracket type enclosures in the way that their optional escaping works -
+* Quote enclosures can be:
+  * escaped by escape prefix - e.g. a quote enclosure starting with `"` and ending with `"` but `\"` is not seen as ending
+  * escaped by doubles - e.g. a quote enclosure starting with `'` and ending with `'` but any doubles `''` are not seen as ending 
+* Bracket enclosures can only be:
+    * escaped by escape prefix - e.g. a bracket enclosure starting with `(` and ending with `)` and escape set to <code>&#92;</code>
+      * `\(` is not seen as a start
+      * `\)` is not seen as an end
+
+Note that brackets are ignored inside quotes - but quotes can exist within brackets.  And when splitting, separators found within any specified quote or bracket enclosure are not considered. 
+
 
 The Splitter provides many pre-defined enclosures:
 <table>
@@ -186,133 +196,133 @@ The Splitter provides many pre-defined enclosures:
         <td><code>Parenthesis</code></td>
         <td>Brackets</td>
         <td><code>(</code> <code>)</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>CurlyBrackets</code></td>
         <td>Brackets</td>
         <td><code>{</code> <code>}</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SquareBrackets</code></td>
         <td>Brackets</td>
         <td><code>[</code> <code>]</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>LtGtAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&lt;</code> <code>&gt;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>LeftRightPointingAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2329;</code> <code>&#x232A;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SubscriptParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x208D;</code> <code>&#x208E;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SuperscriptParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x207d;</code> <code>&#x207e;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SmallParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#xFE59;</code> <code>&#xFE5A;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SmallCurlyBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#xFE5B;</code> <code>&#xFE5C;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>DoubleParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x2E28;</code> <code>&#x2E29;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MathWhiteSquareBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x27E6;</code> <code>&#x27E7;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MathAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x27E8;</code> <code>&#x27E9;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MathDoubleAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x27EA;</code> <code>&#x27EB;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MathWhiteTortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x27EC;</code> <code>&#x27ED;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MathFlattenedParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x27EE;</code> <code>&#x27EF;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>OrnateParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#xFD3E;</code> <code>&#xFD3F;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>AngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x3008;</code> <code>&#x3009;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>DoubleAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x300A;</code> <code>&#x300B;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>FullWidthParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#xFF08;</code> <code>&#xFF09;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>FullWidthSquareBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#xFF3B;</code> <code>&#xFF3D;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>FullWidthCurlyBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#xFF5B;</code> <code>&#xFF5D;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SubstitutionBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2E02;</code> <code>&#x2E03;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SubstitutionQuotes</code></td>
@@ -324,7 +334,7 @@ The Splitter provides many pre-defined enclosures:
         <td><code>DottedSubstitutionBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2E04;</code> <code>&#x2E05;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>DottedSubstitutionQuotes</code></td>
@@ -336,7 +346,7 @@ The Splitter provides many pre-defined enclosures:
         <td><code>TranspositionBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2E09;</code> <code>&#x2E0A;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>TranspositionQuotes</code></td>
@@ -348,7 +358,7 @@ The Splitter provides many pre-defined enclosures:
         <td><code>RaisedOmissionBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2E0C;</code> <code>&#x2E0D;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>RaisedOmissionQuotes</code></td>
@@ -360,7 +370,7 @@ The Splitter provides many pre-defined enclosures:
         <td><code>LowParaphraseBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2E1C;</code> <code>&#x2E1D;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>LowParaphraseQuotes</code></td>
@@ -372,129 +382,131 @@ The Splitter provides many pre-defined enclosures:
         <td><code>SquareWithQuillBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2045;</code> <code>&#x2046;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>WhiteParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x2985;</code> <code>&#x2986;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>WhiteCurlyBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2983;</code> <code>&#x2984;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>WhiteSquareBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x301A;</code> <code>&#x301B;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>WhiteLenticularBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x3016;</code> <code>&#x3017;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>WhiteTortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x3018;</code> <code>&#x3019;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>FullWidthWhiteParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#xFF5F;</code> <code>&#xFF60;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>BlackTortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2997;</code> <code>&#x2998;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>BlackLenticularBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x3010;</code> <code>&#x3011;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>PointingCurvedAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x29FC;</code> <code>&#x29FD;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>TortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x3014;</code> <code>&#x3015;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>SmallTortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#xFE5D;</code> <code>&#xFE5E;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>ZNotationImageBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2987;</code> <code>&#x2988;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>ZNotationBindingBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2989;</code> <code>&#x298A;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MediumOrnamentalParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x2768;</code> <code>&#x2769;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>LightOrnamentalTortoiseShellBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2772;</code> <code>&#x2773;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MediumOrnamentalFlattenedParenthesis</code></td>
         <td>Brackets</td>
         <td><code>&#x276A;</code> <code>&#x276B;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MediumOrnamentalPointingAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x276C;</code> <code>&#x276D;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>MediumOrnamentalCurlyBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2774;</code> <code>&#x2775;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>HeavyOrnamentalPointingAngleQuotes</code></td>
         <td>Quote</td>
         <td><code>&#x276E;</code> <code>&#x276F;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
     <tr>
         <td><code>HeavyOrnamentalPointingAngleBrackets</code></td>
         <td>Brackets</td>
         <td><code>&#x2770;</code> <code>&#x2771;</code></td>
-        <td><em>n/a</em></td>
+        <td><em>none</em></td>
     </tr>
 </table>
+
+_Note: To convert any of the above enclosures to escaping - use the `MakeEscapable()` or `MustMakeEscapable()` functions._
 
 ### Quote enclosures with escaping
 Quotes within quotes can be handled by using an enclosure that specifies how the escaping works, for example the following uses \ (backslash) prefixed escaping...

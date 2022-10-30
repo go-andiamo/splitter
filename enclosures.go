@@ -1,5 +1,7 @@
 package splitter
 
+import "errors"
+
 // Enclosure is used when creating a splitter to denote what 'enclosures' (e.g. quotes or brackets)
 // are to be considered when slitting.
 //
@@ -35,22 +37,57 @@ func (e *Enclosure) isDoubleEscaping() bool {
 }
 
 func (e *Enclosure) isEscapable() bool {
-	return e.IsQuote && e.Escapable
+	return e.Escapable
 }
+
+func (e *Enclosure) isBracketEscapable() bool {
+	return !e.IsQuote && e.Escapable
+}
+
+// MakeEscapable makes an escapable copy of an enclosure
+//
+// returns an error if the supplied Enclosure is a brackets
+// and the escape rune matches either the start or end rune
+// (because brackets cannot be double-escaped - as this would prevent nested brackets)
+func MakeEscapable(enc *Enclosure, esc rune) (*Enclosure, error) {
+	if !enc.IsQuote && (esc == enc.Start || esc == enc.End) {
+		return nil, errors.New("bracket enclosures cannot be double-escaped")
+	}
+	return &Enclosure{
+		Start:     enc.Start,
+		End:       enc.End,
+		IsQuote:   enc.IsQuote,
+		Escapable: true,
+		Escape:    esc,
+	}, nil
+}
+
+// MustMakeEscapable is the same as MakeEscapable, except that it panics on error
+func MustMakeEscapable(enc *Enclosure, esc rune) *Enclosure {
+	if result, err := MakeEscapable(enc, esc); err != nil {
+		panic(err)
+	} else {
+		return result
+	}
+}
+
+const (
+	escBackslash = '\\'
+)
 
 var (
 	DoubleQuotes                              = _DoubleQuotes
-	DoubleQuotesBackSlashEscaped              = _DoubleQuotesBackSlashEscaped
-	DoubleQuotesDoubleEscaped                 = _DoubleQuotesDoubleEscaped
+	DoubleQuotesBackSlashEscaped              = MustMakeEscapable(_DoubleQuotes, escBackslash)
+	DoubleQuotesDoubleEscaped                 = MustMakeEscapable(_DoubleQuotes, '"')
 	SingleQuotes                              = _SingleQuotes
-	SingleQuotesBackSlashEscaped              = _SingleQuotesBackSlashEscaped
-	SingleQuotesDoubleEscaped                 = _SingleQuotesDoubleEscaped
+	SingleQuotesBackSlashEscaped              = MustMakeEscapable(_SingleQuotes, escBackslash)
+	SingleQuotesDoubleEscaped                 = MustMakeEscapable(_SingleQuotes, '\'')
 	SingleInvertedQuotes                      = _SingleInvertedQuotes
-	SingleInvertedQuotesBackSlashEscaped      = _SingleInvertedQuotesBackSlashEscaped
-	SingleInvertedQuotesDoubleEscaped         = _SingleInvertedQuotesDoubleEscaped
+	SingleInvertedQuotesBackSlashEscaped      = MustMakeEscapable(_SingleInvertedQuotes, escBackslash)
+	SingleInvertedQuotesDoubleEscaped         = MustMakeEscapable(_SingleInvertedQuotes, '`')
 	DoublePointingAngleQuotes                 = _DoublePointingAngleQuotes
 	SinglePointingAngleQuotes                 = _SinglePointingAngleQuotes
-	SinglePointingAngleQuotesBackSlashEscaped = _SinglePointingAngleQuotesBackSlashEscaped
+	SinglePointingAngleQuotesBackSlashEscaped = MustMakeEscapable(_SinglePointingAngleQuotes, escBackslash)
 	LeftRightDoubleDoubleQuotes               = _LeftRightDoubleDoubleQuotes
 	LeftRightDoubleSingleQuotes               = _LeftRightDoubleSingleQuotes
 	LeftRightDoublePrimeQuotes                = _LeftRightDoublePrimeQuotes
@@ -116,69 +153,20 @@ var (
 		End:     '"',
 		IsQuote: true,
 	}
-	_DoubleQuotesBackSlashEscaped = &Enclosure{
-		Start:     '"',
-		End:       '"',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '\\',
-	}
-	_DoubleQuotesDoubleEscaped = &Enclosure{
-		Start:     '"',
-		End:       '"',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '"',
-	}
 	_SingleQuotes = &Enclosure{
 		Start:   '\'',
 		End:     '\'',
 		IsQuote: true,
-	}
-	_SingleQuotesBackSlashEscaped = &Enclosure{
-		Start:     '\'',
-		End:       '\'',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '\\',
-	}
-	_SingleQuotesDoubleEscaped = &Enclosure{
-		Start:     '\'',
-		End:       '\'',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '\'',
 	}
 	_SingleInvertedQuotes = &Enclosure{
 		Start:   '`',
 		End:     '`',
 		IsQuote: true,
 	}
-	_SingleInvertedQuotesBackSlashEscaped = &Enclosure{
-		Start:     '`',
-		End:       '`',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '\\',
-	}
-	_SingleInvertedQuotesDoubleEscaped = &Enclosure{
-		Start:     '`',
-		End:       '`',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '`',
-	}
 	_SinglePointingAngleQuotes = &Enclosure{
 		Start:   '\u2039',
 		End:     '\u203A',
 		IsQuote: true,
-	}
-	_SinglePointingAngleQuotesBackSlashEscaped = &Enclosure{
-		Start:     '\u2039',
-		End:       '\u203A',
-		IsQuote:   true,
-		Escapable: true,
-		Escape:    '\\',
 	}
 	_DoublePointingAngleQuotes = &Enclosure{
 		Start:   '\u00AB',
