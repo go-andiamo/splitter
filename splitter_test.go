@@ -399,3 +399,154 @@ func (o *addOptionsOption) Apply(s string, pos int, totalLen int, captured int, 
 	o.splitter.AddDefaultOptions(IgnoreEmptyFirst, IgnoreEmptyLast)
 	return s, true, nil
 }
+
+func TestBracketsEscaping(t *testing.T) {
+	unescaped, err := NewSplitter('/', DoubleQuotes,
+		Parenthesis, SquareBrackets)
+	require.NoError(t, err)
+	escaped, err := NewSplitter('/', DoubleQuotes,
+		MustMakeEscapable(Parenthesis, '\\'), MustMakeEscapable(SquareBrackets, '\\'))
+	testCases := []struct {
+		str             string
+		expectUnEscPass bool
+		expectEscPass   bool
+	}{
+		{
+			`(\(/)`,
+			false,
+			true,
+		},
+		{
+			`(\)/)`,
+			false,
+			true,
+		},
+		{
+			`(\[)`,
+			false,
+			true,
+		},
+		{
+			`(\])`,
+			false,
+			true,
+		},
+		{
+			`(/\[)`,
+			false,
+			true,
+		},
+		{
+			`(/\])`,
+			false,
+			true,
+		},
+		{
+			`\(\(\)`,
+			false,
+			true,
+		},
+		{
+			`\[\[\]`,
+			false,
+			true,
+		},
+		{
+			`(/\(\(\))`,
+			false,
+			true,
+		},
+		{
+			`[/\[\[\]]`,
+			false,
+			true,
+		},
+		{
+			`[/\(\(\)]`,
+			false,
+			true,
+		},
+		{
+			`(/\[\[\])`,
+			false,
+			true,
+		},
+		{
+			`(\(/)(`,
+			false,
+			false,
+		},
+		{
+			`(\)/))`,
+			false,
+			false,
+		},
+		{
+			`((\[)`,
+			false,
+			false,
+		},
+		{
+			`((\])`,
+			false,
+			false,
+		},
+		{
+			`[(/\[)`,
+			false,
+			false,
+		},
+		{
+			`[(/\])`,
+			false,
+			false,
+		},
+		{
+			`\(\(\)]`,
+			false,
+			false,
+		},
+		{
+			`\[\[\]]`,
+			true,
+			false,
+		},
+		{
+			`(/\(\(\)))`,
+			true,
+			false,
+		},
+		{
+			`[/\[\[\]]]`,
+			true,
+			false,
+		},
+		{
+			`[[/\(\(\)]`,
+			false,
+			false,
+		},
+		{
+			`((/\[\[\])`,
+			false,
+			false,
+		},
+	}
+	for i, tc := range testCases {
+		t.Run(fmt.Sprintf("[%d]%s", i+1, tc.str), func(t *testing.T) {
+			_, err = unescaped.Split(tc.str)
+			if tc.expectUnEscPass {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+			pts, err := escaped.Split(tc.str)
+			if tc.expectEscPass {
+				require.NoError(t, err)
+				require.Equal(t, 1, len(pts))
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}

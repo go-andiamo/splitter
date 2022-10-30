@@ -110,6 +110,8 @@ type splitterContext struct {
 	splitter *splitter
 	options  []Option
 	runes    []rune
+	pos      int
+	rune     rune
 	len      int
 	lastAt   int
 	current  *subPart
@@ -141,25 +143,25 @@ func newSplitterContext(str string, splitter *splitter, options []Option) *split
 }
 
 func (ctx *splitterContext) split() ([]string, error) {
-	for i := 0; i < ctx.len; i++ {
-		r := ctx.runes[i]
-		if r == ctx.splitter.separator {
+	ctx.pos = 0
+	for ; ctx.pos < ctx.len; ctx.pos++ {
+		ctx.rune = ctx.runes[ctx.pos]
+		if ctx.rune == ctx.splitter.separator {
 			if !ctx.inAny() {
-				if err := ctx.purge(i, false); err != nil {
+				if err := ctx.purge(ctx.pos, false); err != nil {
 					return nil, err
 				}
 			}
-		} else if isEnd, inQuote, inc := ctx.isQuoteEnd(r, i); isEnd {
-			ctx.pop(i)
+		} else if isEnd, inQuote := ctx.isQuoteEnd(); isEnd {
+			ctx.pop(ctx.pos)
 		} else {
-			i += inc
 			if !inQuote {
-				if ctx.isClose(r) {
-					ctx.pop(i)
-				} else if enc, isOpener := ctx.isOpener(r); isOpener {
-					ctx.push(enc, i)
-				} else if cEnc, ok := ctx.splitter.closers[r]; ok {
-					return nil, newSplittingError(Unopened, i, r, &cEnc)
+				if isClose, skipClose := ctx.isClose(); isClose && !skipClose {
+					ctx.pop(ctx.pos)
+				} else if enc, isOpen := ctx.isOpener(); isOpen {
+					ctx.push(enc, ctx.pos)
+				} else if cEnc, ok := ctx.splitter.closers[ctx.rune]; ok && !skipClose {
+					return nil, newSplittingError(Unopened, ctx.pos, ctx.rune, &cEnc)
 				}
 			}
 		}
@@ -173,20 +175,20 @@ func (ctx *splitterContext) split() ([]string, error) {
 	return ctx.captured, nil
 }
 
-func (ctx *splitterContext) isQuoteEnd(r rune, pos int) (isEnd bool, inQuote bool, skip int) {
+func (ctx *splitterContext) isQuoteEnd() (isEnd bool, inQuote bool) {
 	if ctx.current != nil && ctx.current.enc.IsQuote {
 		inQuote = true
-		if ctx.current.enc.End == r {
+		if ctx.current.enc.End == ctx.rune {
 			isEnd = true
 			if ctx.current.enc.isDoubleEscaping() {
-				if pos < ctx.len-1 && ctx.runes[pos+1] == r {
+				if ctx.pos < ctx.len-1 && ctx.runes[ctx.pos+1] == ctx.rune {
 					isEnd = false
-					skip = 1
+					ctx.pos++
 				}
 			} else if ctx.current.enc.isEscapable() {
 				escaped := false
 				minPos := ctx.current.openPos
-				for i := pos - 1; i > minPos; i-- {
+				for i := ctx.pos - 1; i > minPos; i-- {
 					if ctx.runes[i] == ctx.current.enc.Escape {
 						escaped = !escaped
 					} else {
@@ -228,13 +230,22 @@ func (ctx *splitterContext) inAny() bool {
 	return ctx.current != nil
 }
 
-func (ctx *splitterContext) isClose(r rune) bool {
-	return ctx.current != nil && ctx.current.enc.End == r
+func (ctx *splitterContext) isClose() (is bool, skip bool) {
+	skip = false
+	is = ctx.current != nil && ctx.current.enc.End == ctx.rune
+	if ctx.pos > 0 {
+		if enc, ok := ctx.splitter.closers[ctx.rune]; ok {
+			skip = enc.isBracketEscapable() && ctx.runes[ctx.pos-1] == enc.Escape
+		}
+	}
+	return
 }
 
-func (ctx *splitterContext) isOpener(r rune) (Enclosure, bool) {
-	enc, ok := ctx.splitter.openers[r]
-	return enc, ok
+func (ctx *splitterContext) isOpener() (Enclosure, bool) {
+	enc, is := ctx.splitter.openers[ctx.rune]
+	skip := is && ctx.pos > 0 && enc.isBracketEscapable() && ctx.runes[ctx.pos-1] == enc.Escape
+	is = is && !skip
+	return enc, is
 }
 
 func (ctx *splitterContext) push(enc Enclosure, pos int) {

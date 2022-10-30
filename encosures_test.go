@@ -98,3 +98,50 @@ func TestEnclosures(t *testing.T) {
 		})
 	}
 }
+
+func TestMakeEscapable(t *testing.T) {
+	escpd, err := MakeEscapable(DoubleQuotes, '\\')
+	require.NoError(t, err)
+	require.Equal(t, DoubleQuotes.Start, escpd.Start)
+	require.Equal(t, DoubleQuotes.End, escpd.End)
+	require.Equal(t, '\\', escpd.Escape)
+	require.NotEqual(t, escpd.Escape, DoubleQuotes.Escape)
+	require.True(t, escpd.Escapable)
+	require.True(t, escpd.isEscapable())
+	require.False(t, escpd.isDoubleEscaping())
+
+	escpd, err = MakeEscapable(DoubleQuotes, '"')
+	require.NoError(t, err)
+	require.Equal(t, DoubleQuotes.Start, escpd.Start)
+	require.Equal(t, DoubleQuotes.End, escpd.End)
+	require.Equal(t, '"', escpd.Escape)
+	require.True(t, escpd.Escapable)
+	require.True(t, escpd.isEscapable())
+	require.True(t, escpd.isDoubleEscaping())
+
+	_, err = MakeEscapable(Parenthesis, '\\')
+	require.NoError(t, err)
+	_, err = MakeEscapable(Parenthesis, '(')
+	require.Error(t, err)
+	require.Equal(t, `bracket enclosures cannot be double-escaped`, err.Error())
+	_, err = MakeEscapable(Parenthesis, ')')
+	require.Error(t, err)
+	require.Equal(t, `bracket enclosures cannot be double-escaped`, err.Error())
+}
+
+func TestMustMakeEscapable(t *testing.T) {
+	escpd := MustMakeEscapable(Parenthesis, '\\')
+	require.Equal(t, Parenthesis.Start, escpd.Start)
+	require.Equal(t, Parenthesis.End, escpd.End)
+	require.Equal(t, '\\', escpd.Escape)
+	require.True(t, escpd.Escapable)
+	require.True(t, escpd.isEscapable())
+	require.False(t, escpd.isDoubleEscaping())
+
+	require.Panics(t, func() {
+		MustMakeEscapable(Parenthesis, '(')
+	})
+	require.Panics(t, func() {
+		MustMakeEscapable(Parenthesis, ')')
+	})
+}
