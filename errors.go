@@ -2,6 +2,7 @@ package splitter
 
 import (
 	"fmt"
+	"strings"
 )
 
 // SplittingErrorType is the splitting error type - as used by splittingError
@@ -22,6 +23,7 @@ type SplittingError interface {
 	Rune() rune
 	Enclosure() *Enclosure
 	Wrapped() error
+	Unwrap() error
 }
 
 type splittingError struct {
@@ -55,7 +57,15 @@ func (e *splittingError) Error() string {
 	} else if e.wrapped != nil {
 		return e.wrapped.Error()
 	}
-	return e.message
+	result := fmt.Sprintf(e.message, e.position)
+	if strings.HasSuffix(result, fmt.Sprintf(`%%!(EXTRA int=%d)`, e.position)) {
+		result = result[:strings.LastIndex(result, "%!(EXTRA int=")]
+	}
+	return result
+}
+
+func (e *splittingError) Unwrap() error {
+	return e.wrapped
 }
 
 func (e *splittingError) Type() SplittingErrorType {

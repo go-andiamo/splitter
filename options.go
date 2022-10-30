@@ -20,6 +20,12 @@ var (
 	NotEmptyLast          Option = _NotEmptyLast          // NotEmptyLast causes an error if the last split part is empty
 	NotEmptyLastMsg              = _NotEmptyLastMsg       // NotEmptyLastMsg is the same as NotEmptyLast but allows a custom error message
 	IgnoreEmptyLast       Option = _IgnoreEmptyLast       // IgnoreEmptyLast causes an empty last split part not to be added to the result
+	NotEmptyInners        Option = _NotEmptyInners        // NotEmptyInners causes an error if an inner (i.e. not first or last) split part is empty
+	NotEmptyInnersMsg            = _NotEmptyInnersMsg     // NotEmptyInnersMsg is the same as NotEmptyInners but allows a custom error message
+	IgnoreEmptyInners     Option = _IgnoreEmptyInners     // IgnoreEmptyInners causes empty inner (i.e. not first or last) split parts not to be added to the result
+	NotEmptyOuters        Option = _NotEmptyOuters        // NotEmptyOuters causes an error if an outer (i.e. first or last) split part is empty (same as adding both NotEmptyFirst & NotEmptyLast)
+	NotEmptyOutersMsg            = _NotEmptyOutersMsg     // NotEmptyOutersMsg is the same as NotEmptyOuters but allows a custom error message
+	IgnoreEmptyOuters     Option = _IgnoreEmptyOuters     // IgnoreEmptyOuters causes empty outer (i.e. first or last) split parts not to be added to the result (same as adding both IgnoreEmptyFirst & IgnoreEmptyLast)
 	NoContiguousQuotes    Option = _NoContiguousQuotes    // NoContiguousQuotes causes an error if there are contiguous quotes within a split part
 	NoContiguousQuotesMsg        = _NoContiguousQuotesMsg // NoContiguousQuotesMsg is the same as NoContiguousQuotes but allows a custom error message
 	NoMultiQuotes         Option = _NoMultiQuotes         // NoMultiQuotes causes an error if there are multiple (not necessarily contiguous) quotes within a split part
@@ -49,7 +55,17 @@ var (
 	_NotEmptyLastMsg  = func(message string) Option {
 		return &notEmptyLast{message: message}
 	}
-	_IgnoreEmptyLast       = &ignoreEmptyLast{}
+	_IgnoreEmptyLast   = &ignoreEmptyLast{}
+	_NotEmptyInners    = &notEmptyInners{message: "inner items cannot be empty"}
+	_NotEmptyInnersMsg = func(message string) Option {
+		return &notEmptyInners{message: message}
+	}
+	_IgnoreEmptyInners = &ignoreEmptyInners{}
+	_NotEmptyOuters    = &notEmptyOuters{message: "first/last items cannot be empty"}
+	_NotEmptyOutersMsg = func(message string) Option {
+		return &notEmptyOuters{message: message}
+	}
+	_IgnoreEmptyOuters     = &ignoreEmptyOuters{}
 	_NoContiguousQuotes    = &noContiguousQuotes{message: "split item cannot have contiguous quotes"}
 	_NoContiguousQuotesMsg = func(message string) Option {
 		return &noContiguousQuotes{message: message}
@@ -121,7 +137,7 @@ type notEmptyLast struct {
 }
 
 func (o *notEmptyLast) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
-	if s == "" && pos == totalLen {
+	if s == "" && isLast {
 		return "", false, NewOptionFailError(o.message, pos, nil)
 	}
 	return s, true, nil
@@ -135,6 +151,50 @@ func (o *ignoreEmptyLast) Apply(s string, pos int, totalLen int, captured int, s
 		return "", false, nil
 	}
 	return s, true, nil
+}
+
+type notEmptyInners struct {
+	message string
+}
+
+func (o *notEmptyInners) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	if s == "" && !isLast && !(captured == 0 && skipped == 0) {
+		return "", false, NewOptionFailError(o.message, pos, nil)
+	}
+	return s, true, nil
+}
+
+type ignoreEmptyInners struct {
+}
+
+func (o *ignoreEmptyInners) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	if s != "" {
+		return s, true, nil
+	}
+	isInner := !isLast && !(captured == 0 && skipped == 0)
+	return s, !isInner, nil
+}
+
+type notEmptyOuters struct {
+	message string
+}
+
+func (o *notEmptyOuters) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	if s == "" && (isLast || (captured == 0 && skipped == 0)) {
+		return "", false, NewOptionFailError(o.message, pos, nil)
+	}
+	return s, true, nil
+}
+
+type ignoreEmptyOuters struct {
+}
+
+func (o *ignoreEmptyOuters) Apply(s string, pos int, totalLen int, captured int, skipped int, isLast bool, subParts ...SubPart) (string, bool, error) {
+	if s != "" {
+		return s, true, nil
+	}
+	isOuter := isLast || (captured == 0 && skipped == 0)
+	return s, !isOuter, nil
 }
 
 type noContiguousQuotes struct {
