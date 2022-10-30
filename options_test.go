@@ -117,9 +117,9 @@ func TestOption_NoEmptiesMsg(t *testing.T) {
 	s, err := NewSplitter('/')
 	require.NoError(t, err)
 
-	_, err = s.Split(`a//c`, NoEmptiesMsg("whoops"))
+	_, err = s.Split(`a//c`, NoEmptiesMsg("whoops at position %d"))
 	require.Error(t, err)
-	require.Equal(t, "whoops", err.Error())
+	require.Equal(t, "whoops at position 2", err.Error())
 }
 
 func TestOption_IgnoreEmpties(t *testing.T) {
@@ -215,6 +215,148 @@ func TestOption_IgnoreEmptyLast(t *testing.T) {
 	pts, err = s.Split(`a/b/c/`, IgnoreEmptyLast)
 	require.NoError(t, err)
 	require.Equal(t, 3, len(pts))
+}
+
+func TestOption_NotEmptyInners(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	_, err = s.Split(`/a//c/`, NotEmptyInners)
+	require.Error(t, err)
+	require.Equal(t, _NotEmptyInners.message, err.Error())
+
+	_, err = s.Split(`a//c`, NotEmptyInners)
+	require.Error(t, err)
+	require.Equal(t, _NotEmptyInners.message, err.Error())
+}
+
+func TestOption_NotEmptyInnersMsg(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	_, err = s.Split(`/a//c/`, NotEmptyInnersMsg("whoops"))
+	require.Error(t, err)
+	require.Equal(t, "whoops", err.Error())
+
+	_, err = s.Split(`a//c`, NotEmptyInnersMsg("whoops"))
+	require.Error(t, err)
+	require.Equal(t, "whoops", err.Error())
+}
+
+func TestOption_IgnoreEmptyInners(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	pts, err = s.Split(`/a//c/`, IgnoreEmptyInners)
+	require.NoError(t, err)
+	require.Equal(t, 4, len(pts))
+	require.Equal(t, ``, pts[0])
+	require.Equal(t, `a`, pts[1])
+	require.Equal(t, `c`, pts[2])
+	require.Equal(t, ``, pts[3])
+
+	pts, err = s.Split(`a//c`, IgnoreEmptyInners)
+	require.NoError(t, err)
+	require.Equal(t, 2, len(pts))
+	require.Equal(t, `a`, pts[0])
+	require.Equal(t, `c`, pts[1])
+}
+
+func TestOption_NotEmptyOuters(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	_, err = s.Split(`/a//c/`, NotEmptyOuters)
+	require.Error(t, err)
+	require.Equal(t, _NotEmptyOuters.message, err.Error())
+
+	_, err = s.Split(`a//c/`, NotEmptyOuters)
+	require.Error(t, err)
+	require.Equal(t, _NotEmptyOuters.message, err.Error())
+
+	_, err = s.Split(`/a//c`, NotEmptyOuters)
+	require.Error(t, err)
+	require.Equal(t, _NotEmptyOuters.message, err.Error())
+
+	_, err = s.Split(`a//c`, NotEmptyOuters)
+	require.NoError(t, err)
+}
+
+func TestOption_NotEmptyOutersMsg(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	_, err = s.Split(`/a//c/`, NotEmptyOutersMsg("whoops"))
+	require.Error(t, err)
+	require.Equal(t, "whoops", err.Error())
+
+	_, err = s.Split(`a//c/`, NotEmptyOutersMsg("whoops"))
+	require.Error(t, err)
+	require.Equal(t, "whoops", err.Error())
+
+	_, err = s.Split(`/a//c`, NotEmptyOutersMsg("whoops"))
+	require.Error(t, err)
+	require.Equal(t, "whoops", err.Error())
+
+	_, err = s.Split(`a//c`, NotEmptyOutersMsg("whoops"))
+	require.NoError(t, err)
+}
+
+func TestOption_IgnoreEmptyOuters(t *testing.T) {
+	s, err := NewSplitter('/')
+	require.NoError(t, err)
+
+	pts, err := s.Split(`/a//c/`)
+	require.NoError(t, err)
+	require.Equal(t, 5, len(pts))
+
+	pts, err = s.Split(`/a//c/`, IgnoreEmptyOuters)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(pts))
+	require.Equal(t, `a`, pts[0])
+	require.Equal(t, ``, pts[1])
+	require.Equal(t, `c`, pts[2])
+
+	pts, err = s.Split(`a//c/`, IgnoreEmptyOuters)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(pts))
+	require.Equal(t, `a`, pts[0])
+	require.Equal(t, ``, pts[1])
+	require.Equal(t, `c`, pts[2])
+
+	pts, err = s.Split(`/a//c`, IgnoreEmptyOuters)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(pts))
+	require.Equal(t, `a`, pts[0])
+	require.Equal(t, ``, pts[1])
+	require.Equal(t, `c`, pts[2])
+
+	pts, err = s.Split(`a//c`, IgnoreEmptyOuters)
+	require.NoError(t, err)
+	require.Equal(t, 3, len(pts))
+	require.Equal(t, `a`, pts[0])
+	require.Equal(t, ``, pts[1])
+	require.Equal(t, `c`, pts[2])
 }
 
 func TestOption_NoContiguousQuotes(t *testing.T) {
